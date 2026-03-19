@@ -1,0 +1,8 @@
+path: C:/Users/nypsy/Downloads/helmet-detection.v1i.yolov8
+
+train: train/images
+val: train/images   # (temporary, kyunki val folder nahi hai)
+
+names:
+  0: helmet
+  1: no_helmet

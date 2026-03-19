@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪖 AI Helmet Detection - Camera Only</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Animated Background */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .animated-bg span {
+            position: absolute;
+            display: block;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            animation: animate 25s linear infinite;
+            bottom: -150px;
+        }
+
+        @keyframes animate {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-1000px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            animation: fadeInDown 1s ease;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        /* Camera Card */
+        .camera-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 1s ease;
+            margin-bottom: 30px;
+        }
+
+        .camera-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Camera Container */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            border: 3px solid #764ba2;
+        }
+
+        #video {
+            width: 100%;
+            height: auto;
+            transform: scaleX(-1);
+            display: block;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            border: 3px solid #fff;
+            box-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 14px 35px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Result Message */
+        .result-message {
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-size: 1.5em;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        .result-safe {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .result-unsafe {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        .result-mixed {
+            background: linear-gradient(135deg, #fff3cd, #ffeeba);
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Results Section */
+        .results-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: fadeInUp 1s ease;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .results-header h2 {
+            color: #333;
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .result-image {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .result-image img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .detection-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .detection-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid;
+            transition: transform 0.2s ease;
+        }
+
+        .detection-item:hover {
+            transform: translateX(5px);
+        }
+
+        .detection-item.helmet {
+            border-left-color: #28a745;
+        }
+
+        .detection-item.no-helmet {
+            border-left-color: #dc3545;
+        }
+
+        .class-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .class-badge.helmet {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .class-badge.no-helmet {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .spinner {
+            width: 70px;
+            height: 70px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #764ba2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading p {
+            color: white;
+            margin-top: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+            font-weight: 500;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.error {
+            border-left: 5px solid #dc3545;
+        }
+
+        .toast.success {
+            border-left: 5px solid #28a745;
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .camera-controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg" id="animatedBg"></div>
+
+    <!-- Loading Spinner -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Processing... Please wait</p>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🪖 AI Helmet Detection</h1>
+            <p>Camera se photo click karo, AI instantly detect karega</p>
+        </div>
+
+        <!-- Stats (optional) -->
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalScans">0</div>
+                <div class="stat-label">Total Scans</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="safeCount">0</div>
+                <div class="stat-label">Safe</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="unsafeCount">0</div>
+                <div class="stat-label">Unsafe</div>
+            </div>
+        </div>
+
+        <!-- Camera Card -->
+        <div class="camera-card">
+            <h2><i>📸</i> Live Camera Detection</h2>
+            
+            <div class="camera-container">
+                <video id="video" autoplay playsinline></video>
+                <div class="camera-overlay"></div>
+            </div>
+            
+            <div class="camera-controls">
+                <button class="btn btn-success" id="startCamera" onclick="startCamera()">
+                    <i>▶️</i> Start Camera
+                </button>
+                <button class="btn btn-danger" id="stopCamera" onclick="stopCamera()" disabled>
+                    <i>⏹️</i> Stop Camera
+                </button>
+                <button class="btn btn-primary" id="captureBtn" onclick="captureImage()" disabled>
+                    <i>📸</i> Click & Detect
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Message (shows only after detection) -->
+        <div id="resultMessageContainer" style="display: none;"></div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="results" style="display: none;">
+            <div class="results-header">
+                <h2><i>📊</i> Detection Results</h2>
+                <div class="timestamp" id="timestamp"></div>
+            </div>
+            
+            <div class="result-image">
+                <h3>Processed Image</h3>
+                <img id="resultImage" src="" alt="Detection Result">
+            </div>
+            
+            <div class="detection-list">
+                <h3>Detected Objects</h3>
+                <div style="margin-bottom: 15px;">
+                    <strong>Total Detections: <span id="totalDetections">0</span></strong>
+                </div>
+                <div id="detectionsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables
+        let videoStream = null;
+        let selectedFile = null;
+        let scanCount = 0;
+        let safeCount = 0;
+        let unsafeCount = 0;
+
+        // Generate animated background bubbles
+        function createBubbles() {
+            const bg = document.getElementById('animatedBg');
+            for (let i = 0; i < 20; i++) {
+                const span = document.createElement('span');
+                span.style.left = Math.random() * 100 + '%';
+                span.style.width = Math.random() * 30 + 10 + 'px';
+                span.style.height = span.style.width;
+                span.style.animationDelay = Math.random() * 20 + 's';
+                span.style.animationDuration = Math.random() * 20 + 15 + 's';
+                bg.appendChild(span);
+            }
+        }
+
+        // Start Camera
+        async function startCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'environment' // Back camera prefer karo
+                    } 
+                });
+                
+                const video = document.getElementById('video');
+                video.srcObject = videoStream;
+                
+                document.getElementById('startCamera').disabled = true;
+                document.getElementById('stopCamera').disabled = false;
+                document.getElementById('captureBtn').disabled = false;
+                
+                showToast('Camera started successfully!', 'success');
+            } catch (err) {
+                showToast('Camera access denied or not available', 'error');
+            }
+        }
+
+        // Stop Camera
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+                
+                document.getElementById('startCamera').disabled = false;
+                document.getElementById('stopCamera').disabled = true;
+                document.getElementById('captureBtn').disabled = true;
+                
+                showToast('Camera stopped', 'success');
+            }
+        }
+
+        // Capture Image from Camera
+        async function captureImage() {
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            // Convert to base64
+            const imageData = canvas.toDataURL('image/jpeg');
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'flex';
+            
+            try {
+                const response = await fetch('/predict-camera', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: imageData })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Something went wrong');
+                }
+                
+                displayResults(data.results);
+                showToast('Image processed successfully!', 'success');
+                
+                // Update stats
+                scanCount++;
+                document.getElementById('totalScans').textContent = scanCount;
+                
+                if (data.results.helmet_detected && !data.results.no_helmet_detected) {
+                    safeCount++;
+                    document.getElementById('safeCount').textContent = safeCount;
+                } else if (!data.results.helmet_detected && data.results.no_helmet_detected) {
+                    unsafeCount++;
+                    document.getElementById('unsafeCount').textContent = unsafeCount;
+                }
+                
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Display Results
+        function displayResults(results) {
+            // Show result message
+            const messageContainer = document.getElementById('resultMessageContainer');
+            messageContainer.style.display = 'block';
+            
+            let messageClass = '';
+            if (results.helmet_detected && !results.no_helmet_detected) {
+                messageClass = 'result-safe';
+            } else if (!results.helmet_detected && results.no_helmet_detected) {
+                messageClass = 'result-unsafe';
+            } else {
+                messageClass = 'result-mixed';
+            }
+            
+            messageContainer.innerHTML = `
+                <div class="result-message ${messageClass}">
+                    ${results.result_message}
+                </div>
+            `;
+            
+            // Show detailed results
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('resultImage').src = results.result_path + '?t=' + Date.now();
+            document.getElementById('totalDetections').textContent = results.total;
+            document.getElementById('timestamp').textContent = `Processed: ${results.timestamp}`;
+            
+            const container = document.getElementById('detectionsContainer');
+            container.innerHTML = '';
+            
+            if (results.detections.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No objects detected</p>';
+                return;
+            }
+            
+            results.detections.forEach((det, index) => {
+                const item = document.createElement('div');
+                const isHelmet = det.class.includes('Helmet') && !det.class.includes('No');
+                item.className = `detection-item ${isHelmet ? 'helmet' : 'no-helmet'}`;
+                
+                const classBadge = isHelmet ? 'helmet' : 'no-helmet';
+                
+                item.innerHTML = `
+                    <div>
+                        <strong>#${index + 1}</strong> ${det.class}
+                    </div>
+                    <div>
+                        <span class="class-badge ${classBadge}">${(det.confidence * 100).toFixed(1)}%</span>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Show Toast Notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toast.className = `toast ${type}`;
+            toastMessage.innerHTML = type === 'success' ? '✅ ' + message : '❌ ' + message;
+            
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize
+        window.onload = function() {
+            createBubbles();
+            
+            // Stats initialize
+            document.getElementById('totalScans').textContent = '0';
+            document.getElementById('safeCount').textContent = '0';
+            document.getElementById('unsafeCount').textContent = '0';
+        };
+
+        // Clean up camera on page unload
+        window.addEventListener('beforeunload', function() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>

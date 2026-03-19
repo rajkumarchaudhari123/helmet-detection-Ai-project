@@ -1,0 +1,12 @@
+**pycache**/
+*.pyc
+
+static/uploads/
+static/results/
+
+runs/
+
+*.pt
+
+.vscode/
+
