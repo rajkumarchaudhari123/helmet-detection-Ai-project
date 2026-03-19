@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 # ================= MODEL LOAD =================
 try:
-    model_path = "C:/runs/detect/train/weights/best.pt"
+    model_path = r"C:\runs\detect\train\weights\best.pt"  # r prefix = raw string
+
     print("Checking model path:", model_path)
     print("Exists:", os.path.exists(model_path))
 
