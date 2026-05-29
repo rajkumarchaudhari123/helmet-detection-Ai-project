@@ -219,7 +219,16 @@ def predict_camera():
 
         return jsonify({
             "success": True,
-            "data": result
+            "data": result,
+            "results": {
+                "helmet_detected": result["helmet"] > 0,
+                "no_helmet_detected": result["no_helmet"] > 0,
+                "result_message": result["message"],
+                "result_path": result["image"],
+                "total": len(result["detections"]),
+                "timestamp": result["time"],
+                "detections": result["detections"]
+            }
         })
 
     except Exception as e:
@@ -273,4 +282,4 @@ if __name__ == '__main__':
     print(f"📍 CUDA available: {torch.cuda.is_available()}")
     print("="*50 + "\n")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)

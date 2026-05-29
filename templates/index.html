@@ -429,6 +429,95 @@
                 justify-content: center;
             }
         }
+
+        /* Challan Card Styles */
+        .challan-card {
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            animation: slideInUp 0.5s ease;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .challan-cut {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border: 2px solid #ef5350;
+            color: #c62828;
+        }
+
+        .challan-safe {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 2px solid #66bb6a;
+            color: #2e7d32;
+        }
+
+        .challan-header {
+            font-size: 1.4em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px dashed currentColor;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .challan-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .challan-row {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .challan-label {
+            font-size: 0.85em;
+            text-transform: uppercase;
+            opacity: 0.7;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .challan-value {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .challan-stamp {
+            grid-column: span 2;
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: 900;
+            text-transform: uppercase;
+            border: 4px solid currentColor;
+            padding: 5px 25px;
+            border-radius: 10px;
+            transform: rotate(-3deg);
+            margin: 20px auto 5px auto;
+            width: fit-content;
+            animation: stampIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes stampIn {
+            0% { transform: scale(3) rotate(-20deg); opacity: 0; }
+            100% { transform: scale(1) rotate(-3deg); opacity: 1; }
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -493,6 +582,9 @@
 
         <!-- Result Message (shows only after detection) -->
         <div id="resultMessageContainer" style="display: none;"></div>
+
+        <!-- E-Challan Card -->
+        <div id="challanContainer" style="display: none;"></div>
 
         <!-- Results Section -->
         <div class="results-section" id="results" style="display: none;">
@@ -648,6 +740,77 @@
                     ${results.result_message}
                 </div>
             `;
+            
+            // Generate E-Challan Receipt dynamically
+            const challanContainer = document.getElementById('challanContainer');
+            challanContainer.style.display = 'block';
+
+            const hasNoHelmet = results.no_helmet_detected;
+            const hasHelmet = results.helmet_detected;
+
+            if (hasNoHelmet) {
+                const challanNo = 'CH-' + Math.floor(100000 + Math.random() * 900000);
+                const randomVehicles = ['DL 3S TC 1234', 'MH 12 AB 5678', 'HR 26 DQ 8821', 'UP 16 AZ 4321', 'KA 51 MB 9900'];
+                const vehicleNo = randomVehicles[Math.floor(Math.random() * randomVehicles.length)];
+                
+                challanContainer.innerHTML = `
+                    <div class="challan-card challan-cut">
+                        <div class="challan-header">
+                            <span>🚨 E-CHALLAN GENERATED</span>
+                            <span>FINE: ₹1,000</span>
+                        </div>
+                        <div class="challan-details">
+                            <div class="challan-row">
+                                <span class="challan-label">Challan Number</span>
+                                <span class="challan-value">${challanNo}</span>
+                            </div>
+                            <div class="challan-row">
+                                <span class="challan-label">Vehicle Number</span>
+                                <span class="challan-value">${vehicleNo} (Dummy)</span>
+                            </div>
+                            <div class="challan-row" style="grid-column: span 2;">
+                                <span class="challan-label">Offence</span>
+                                <span class="challan-value">RIDING WITHOUT HELMET (SEC 129 MV ACT)</span>
+                            </div>
+                            <div class="challan-row">
+                                <span class="challan-label">Status</span>
+                                <span class="challan-value" style="color: #c62828; font-weight: bold;">🔴 PENDING PAYMENT</span>
+                            </div>
+                            <div class="challan-row">
+                                <span class="challan-label">Date & Time</span>
+                                <span class="challan-value">${results.timestamp}</span>
+                            </div>
+                        </div>
+                        <div class="challan-stamp">🔴 CHALLAN CUT!</div>
+                    </div>
+                `;
+            } else if (hasHelmet) {
+                challanContainer.innerHTML = `
+                    <div class="challan-card challan-safe">
+                        <div class="challan-header">
+                            <span>🟢 SAFE RIDER STATUS</span>
+                            <span>FINE: ₹0</span>
+                        </div>
+                        <div class="challan-details">
+                            <div class="challan-row" style="grid-column: span 2;">
+                                <span class="challan-label">Status</span>
+                                <span class="challan-value">Aapne Helmet pehna hai! Aap safe hain aur traffic rules follow kar rahe hain.</span>
+                            </div>
+                            <div class="challan-row">
+                                <span class="challan-label">Fine Amount</span>
+                                <span class="challan-value">₹0 (No Penalty)</span>
+                            </div>
+                            <div class="challan-row">
+                                <span class="challan-label">Date & Time</span>
+                                <span class="challan-value">${results.timestamp}</span>
+                            </div>
+                        </div>
+                        <div class="challan-stamp" style="color: #2e7d32; border-color: #2e7d32;">🟢 NO CHALLAN</div>
+                    </div>
+                `;
+            } else {
+                challanContainer.style.display = 'none';
+            }
             
             // Show detailed results
             document.getElementById('results').style.display = 'block';
